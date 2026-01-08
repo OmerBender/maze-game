@@ -42,10 +42,11 @@ app.get('/api/records', (req, res) => {
 ======================= */
 const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
 
+// מגיש את ה-static של React build
 app.use(express.static(clientBuildPath));
 
-// 👇 זה הפיקס הקריטי (במקום app.get('*'))
-app.get('/*', (req, res) => {
+// רק השורש → React
+app.get('/', (req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
