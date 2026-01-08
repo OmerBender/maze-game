@@ -27,15 +27,21 @@ function Stage1() {
   };
 
   const handleWin = (finalTime) => {
-    fetch('http://127.0.0.1:3000/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        stage: 1, 
-        name: playerName, 
-        time: parseFloat(finalTime) 
-      })
+  fetch('/api/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      stage: 1,
+      name: playerName,
+      time: parseFloat(finalTime)
     })
+  })
+  .catch(err => console.error("Save error:", err))
+  .finally(() => {
+    setTimeout(() => navigate('/'), 3000);
+  });
+};
+
     .then(() => {
       setTimeout(() => navigate('/'), 3000); 
     })
