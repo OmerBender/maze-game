@@ -1,39 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Maze2 from './Maze2'; // באותה תיקייה!
+import Maze2 from './Maze2';
 import './Stages.css';
 import './Stage2.css';
 
+const API = process.env.REACT_APP_API_URL || "";
+
 function Stage2() {
   const navigate = useNavigate();
-  const [gameState, setGameState] = useState('INPUT');
+  const [gameState, setGameState] = useState('INPUT'); // INPUT | COUNTDOWN | PLAYING
   const [playerName, setPlayerName] = useState('');
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
-    if (gameState === 'COUNTDOWN') {
-      if (countdown > 0) {
-        const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-        return () => clearTimeout(timer);
-      } else {
-        setGameState('PLAYING');
-      }
+    if (gameState !== 'COUNTDOWN') return;
+
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+      return () => clearTimeout(timer);
     }
+
+    setGameState('PLAYING');
   }, [gameState, countdown]);
 
   const handleStart = () => {
-    if (playerName.trim().length < 2) return alert("Please enter a name");
+    if (playerName.trim().length < 2) {
+      alert("Please enter a name");
+      return;
+    }
+    setCountdown(3);
     setGameState('COUNTDOWN');
   };
 
-  const handleWin = (finalTime) => {
-    fetch('http://127.0.0.1:3000/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stage: 2, name: playerName, time: finalTime })
-    })
-    .then(() => setTimeout(() => navigate('/'), 3000))
-    .catch(err => console.error(err));
+  const handleWin = async (finalTime) => {
+    try {
+      const base = API || "";
+      await fetch(`${base}/api/score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stage: 2,
+          name: playerName,
+          time: parseFloat(finalTime),
+        }),
+      });
+    } catch (err) {
+      console.error("Save error:", err);
+    } finally {
+      setTimeout(() => navigate('/'), 3000);
+    }
   };
 
   return (
@@ -41,9 +56,9 @@ function Stage2() {
       {gameState === 'INPUT' && (
         <div className="setup-card">
           <h2>Stage 2: The Deep Blue</h2>
-          <input 
-            type="text" 
-            placeholder="Explorer Name..." 
+          <input
+            type="text"
+            placeholder="Explorer Name..."
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
           />
@@ -53,7 +68,9 @@ function Stage2() {
       )}
 
       {gameState === 'COUNTDOWN' && (
-        <div className="countdown-overlay">{countdown > 0 ? countdown : "GO!"}</div>
+        <div className="countdown-overlay">
+          {countdown > 0 ? countdown : "GO!"}
+        </div>
       )}
 
       {gameState === 'PLAYING' && (
