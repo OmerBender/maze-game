@@ -20,7 +20,6 @@ function Stage1() {
       return () => clearTimeout(timer);
     }
 
-    // countdown הגיע ל-0
     setGameState('PLAYING');
   }, [gameState, countdown]);
 
@@ -35,7 +34,6 @@ function Stage1() {
 
   const handleWin = async (finalTime) => {
     try {
-      // אם אין API (למשל בפיתוח מקומי בלי env), נשלח לנתיב יחסי
       const base = API || "";
       await fetch(`${base}/api/score`, {
         method: 'POST',
@@ -64,6 +62,12 @@ function Stage1() {
             placeholder="Adventurer Name..."
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleStart();
+              }
+            }}
           />
 
           <br />
