@@ -83,7 +83,8 @@ function Maze1({ onWin, playerName }) {
         if (x === exit.x && y === exit.y) {
           setIsWon(true);
           // שליחה לשרת והמתנה קלה לפני חזרה למפה
-          setTimeout(() => onWin(parseFloat(elapsed)), 3000);
+          onWin(parseFloat(elapsed));
+
         }
       }
     };
