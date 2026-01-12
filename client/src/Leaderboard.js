@@ -5,11 +5,8 @@ function Leaderboard() {
 
   useEffect(() => {
     const fetchRecords = () => {
-      fetch('/api/records')   // ✅ עובד גם בלוקאלי וגם ב-Render
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
+      fetch('/api/records')
+        .then(res => res.json())
         .then(data => setRecords(Array.isArray(data) ? data : []))
         .catch(() => setRecords([]));
     };
@@ -31,7 +28,7 @@ function Leaderboard() {
                 <td style={{ fontWeight: 'bold' }}>Level {stage}</td>
                 <td>{r?.name || '---'}</td>
                 <td style={{ color: '#084320ff', fontWeight: 'bold' }}>
-                  {r?.time !== undefined ? `${Number(r.time).toFixed(2)}s` : '---'}
+                  {r?.time !== undefined ? `${parseFloat(r.time).toFixed(2)}s` : '---'}
                 </td>
               </tr>
             );
