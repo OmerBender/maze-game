@@ -56,14 +56,25 @@ function Stage2() {
       {gameState === 'INPUT' && (
         <div className="setup-card">
           <h2>Stage 2: The Deep Blue</h2>
+
           <input
             type="text"
             placeholder="Explorer Name..."
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleStart();
+              }
+            }}
           />
+
           <br />
-          <button className="start-btn" onClick={handleStart}>Dive Down</button>
+
+          <button className="start-btn" onClick={handleStart}>
+            Dive Down
+          </button>
         </div>
       )}
 
