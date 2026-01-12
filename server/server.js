@@ -24,7 +24,7 @@ app.post('/api/score', (req, res) => {
     "INSERT INTO scores (stage, name, time) VALUES (?, ?, ?)",
     [stage, name, time],
     (err) => {
-      if (err) return res.status(500).json(err.message);
+      if (err) return res.status(500).json({ error: err.message });
       res.json({ message: "Saved" });
     }
   );
@@ -32,7 +32,7 @@ app.post('/api/score', (req, res) => {
 
 app.get('/api/records', (req, res) => {
   db.all("SELECT * FROM scores", [], (err, rows) => {
-    if (err) return res.status(500).json(err.message);
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
@@ -41,12 +41,11 @@ app.get('/api/records', (req, res) => {
    SERVE REACT BUILD
 ======================= */
 const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-
-// מגיש את ה-static של React build
 app.use(express.static(clientBuildPath));
 
-// רק השורש → React
-app.get('/', (req, res) => {
+// fallback לכל נתיב שהוא לא /api → React Router
+app.get('*', (req, res) => {
+  // אם אין build עדיין, זה יעזור לך להבין בלוגים מה חסר
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
