@@ -1,14 +1,11 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
+const db = require('./db');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-const db = new sqlite3.Database('./maze_records.db');
-
 /* =======================
    DATABASE (BEST PER STAGE)
 ======================= */
