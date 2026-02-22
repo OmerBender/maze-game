@@ -1,26 +1,12 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
+const db = require('./db');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = new sqlite3.Database('./maze_records.db');
-
-/* =======================
-   DATABASE (BEST PER STAGE)
-======================= */
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS records (
-      stage INTEGER PRIMARY KEY,
-      name TEXT NOT NULL,
-      time REAL NOT NULL
-    )
-  `);
-});
 
 /* =======================
    API ROUTES
