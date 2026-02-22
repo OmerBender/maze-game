@@ -7,12 +7,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
 /* =======================
    API ROUTES
 ======================= */
 
-// עדכון/יצירה של שיא
+/**
+ * POST /api/score
+ * מוסיף תוצאה חדשה (stage, name, time),
+ * ואז משאיר רק את Top 3 (הזמנים הכי נמוכים) עבור אותו stage.
+ * מחזיר את ה-Top 3 המעודכן לאותו stage.
+ */
 app.post('/api/score', (req, res) => {
   const stage = Number(req.body.stage);
   const name = String(req.body.name || '').trim();
@@ -28,49 +32,79 @@ app.post('/api/score', (req, res) => {
     return res.status(400).json({ error: 'Invalid time' });
   }
 
-  // מביאים שיא קיים לשלב
-  db.get(
-    'SELECT time FROM records WHERE stage = ?',
-    [stage],
-    (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
+  db.serialize(() => {
+    // 1) תמיד מכניסים את התוצאה החדשה
+    db.run(
+      'INSERT INTO records (stage, name, time) VALUES (?, ?, ?)',
+      [stage, name, time],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
 
-      // אין שיא עדיין → מכניסים
-      if (!row) {
+        // 2) מוחקים כל רשומה שלא ב-Top 3 של אותו stage
         db.run(
-          'INSERT INTO records (stage, name, time) VALUES (?, ?, ?)',
-          [stage, name, time],
+          `
+          DELETE FROM records
+          WHERE stage = ?
+            AND id NOT IN (
+              SELECT id
+              FROM records
+              WHERE stage = ?
+              ORDER BY time ASC, created_at ASC
+              LIMIT 3
+            )
+          `,
+          [stage, stage],
           (err2) => {
             if (err2) return res.status(500).json({ error: err2.message });
-            return res.json({ updated: true, reason: 'first_record' });
-          }
-        );
-        return;
-      }
 
-      // יש שיא: מעדכנים רק אם הזמן חדש קטן יותר (שיא טוב יותר)
-      if (time < row.time) {
-        db.run(
-          'UPDATE records SET name = ?, time = ? WHERE stage = ?',
-          [name, time, stage],
-          (err3) => {
-            if (err3) return res.status(500).json({ error: err3.message });
-            return res.json({ updated: true, reason: 'new_record' });
+            // 3) מחזירים Top 3 מעודכן לאותו stage
+            db.all(
+              `
+              SELECT stage, name, time
+              FROM records
+              WHERE stage = ?
+              ORDER BY time ASC, created_at ASC
+              LIMIT 3
+              `,
+              [stage],
+              (err3, rows) => {
+                if (err3) return res.status(500).json({ error: err3.message });
+                return res.json({ ok: true, stage, top3: rows });
+              }
+            );
           }
         );
-      } else {
-        return res.json({ updated: false, reason: 'not_better' });
       }
-    }
-  );
+    );
+  });
 });
 
-// מחזירים את השיאים (רשומה אחת לכל stage)
+/**
+ * GET /api/records
+ * מחזיר Top 3 לכל stage (ממויין לפי stage ואז time).
+ */
 app.get('/api/records', (req, res) => {
-  db.all('SELECT stage, name, time FROM records ORDER BY stage ASC', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+  db.all(
+    `
+    SELECT r1.stage, r1.name, r1.time
+    FROM records r1
+    WHERE (
+      SELECT COUNT(*)
+      FROM records r2
+      WHERE r2.stage = r1.stage
+        AND (
+          r2.time < r1.time OR
+          (r2.time = r1.time AND r2.created_at <= r1.created_at)
+        )
+    ) < 3
+    ORDER BY r1.stage ASC, r1.time ASC, r1.created_at ASC
+    `,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      return res.json(rows);
+    }
+  );
 });
 
 /* =======================
